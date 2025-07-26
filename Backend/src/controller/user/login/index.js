@@ -26,27 +26,21 @@ export const loginUser = async (req, res) => {
       password === process.env.SUPER_ADMIN_PASSWORD
     ) {
       const superAdmin = {
-        id: "superadmin",
+        id: "superadmin01",
         fullname: "Super Admin",
         email,
         role: "super-admin",
       };
 
-      const accessToken = generateAccessToken(superAdmin);
-      const refreshToken = generateRefreshToken(superAdmin);
+    
 
-      const options = {
-        secure: true,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      };
 
-      res.cookie("accessToken", accessToken, options);
-      res.cookie("refreshToken", refreshToken, options);
+
 
       return ApiResponse(
         res,
         201,
-        { user: superAdmin, accessToken, refreshToken },
+      superAdmin,
         "Super Admin Logged In Successfully"
       );
     }

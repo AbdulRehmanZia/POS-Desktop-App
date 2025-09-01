@@ -7,30 +7,36 @@ export const getSales = async (req, res) => {
     let page = Number(req.query.page) || 1;
     let limit = Number(req.query.limit) || 10;
     if (page < 1) page = 1;
-    if (limit <= 0 || limit >= 100) limit = 10;
+    if (limit <= 0 || limit > 100) limit = 10;
 
     const skip = (page - 1) * limit;
 
-    // Filters from query
-    const { q: name, startDate, endDate, customerName, paymentType, category } = req.query;
+    const {
+      q: name,
+      startDate,
+      endDate,
+      customerName,
+      paymentType,
+      category,
+    } = req.query;
 
-    let whereClause = {};
+    // Enforce store
+    const storeId = req.store.id;
 
-    // Product Name filter
+    let whereClause = { storeId };
+
+    // Product filter
     if (name) {
       whereClause.saleItems = {
         some: {
           product: {
-            name: {
-              contains: name,
-              mode: "insensitive",
-            },
+            name: { contains: name, mode: "insensitive" },
           },
         },
       };
     }
 
-    // Date Range filter
+    // Date filter
     if (startDate && endDate) {
       if (isNaN(Date.parse(startDate)) || isNaN(Date.parse(endDate))) {
         return ApiError(res, 400, null, "Invalid date format");
@@ -41,7 +47,7 @@ export const getSales = async (req, res) => {
       };
     }
 
-    // Customer Name filter
+    // Customer filter
     if (customerName) {
       whereClause.customerName = {
         contains: customerName,
@@ -54,40 +60,32 @@ export const getSales = async (req, res) => {
       whereClause.paymentType = paymentType;
     }
 
-    // Product Category filter
-if (category) {
-  whereClause.saleItems = {
-    some: {
-      product: {
-        category: {
-          is: {
-            name: {
-              contains: category,
-              mode: "insensitive",
-            }
-          }
-        }
-      }
+    // Category filter
+    if (category) {
+      whereClause.saleItems = {
+        some: {
+          product: {
+            category: {
+              is: {
+                name: { contains: category, mode: "insensitive" },
+              },
+            },
+          },
+        },
+      };
     }
-  };
-}
 
     // Fetch sales
     const sales = await prisma.sale.findMany({
       where: whereClause,
       skip,
       take: limit,
-      orderBy: {
-        createdAt: 'desc', // Newest first
-      },
+      orderBy: { createdAt: "desc" },
       include: {
-        saleItems: {
-          include: { product: true },
-        },
+        saleItems: { include: { product: true } },
       },
     });
 
-    // Total count for pagination
     const totalSales = await prisma.sale.count({ where: whereClause });
     const totalPages = Math.ceil(totalSales / limit);
 
@@ -96,7 +94,6 @@ if (category) {
       currentPage: page,
       limit,
     });
-
   } catch (error) {
     console.error("Error in getSales:", error);
     return ApiError(res, 500, null, "Internal Server Error");

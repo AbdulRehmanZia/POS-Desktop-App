@@ -5,9 +5,22 @@ import ApiResponse from "../../../utils/ApiResponse.js";
 //update Store Member
 export const updateStoreMember = async (req, res) => {
   try {
-    const userId = req.params.id;
-
+    const memberId = Number(req.params.id);
+    const storeId = req.store.id;
     const { fullname, email } = req.body;
+
+    const member = await prisma.user.findFirst({
+      where: {
+        id: memberId,
+        isDeleted: false,
+        memberOfStores: { some: { id: storeId } }
+      },
+    });
+
+    if (!member) {
+      return ApiError(res, 404, "Member not found in this store");
+    }
+
     const updatedData = {};
     if (fullname !== undefined) updatedData.fullname = fullname;
     if (email !== undefined) updatedData.email = email;
@@ -17,11 +30,10 @@ export const updateStoreMember = async (req, res) => {
     }
 
     const updatedUser = await prisma.user.update({
-      where: {
-        id: Number(userId),
-      },
+      where: { id: memberId },
       data: updatedData,
       select: {
+        id: true,
         fullname: true,
         email: true,
         role: true,
@@ -30,7 +42,7 @@ export const updateStoreMember = async (req, res) => {
 
     return ApiResponse(res, 200, updatedUser, "User Updated Successfully");
   } catch (error) {
-    console.error("Error in updateMember:", error);
+    console.error("Error in updateStoreMember:", error);
     return ApiError(res, 500, "Internal Server Error", error);
   }
 };

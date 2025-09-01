@@ -6,6 +6,7 @@ export const getUsers = async (req, res) => {
   let page = Number(req.query.page) || 1;
   let limit = Number(req.query.limit) || 10;
   const search = req.query.search || "";
+  const storeId = req.store.id;
 
   if (page < 1) page = 1;
   if (limit <= 0 || limit > 100) limit = 10;
@@ -15,6 +16,7 @@ console.log("Search query:", req.query.search);
   try {
     const whereClause = {
       isDeleted: false,
+      memberOfStores: { some: { id: storeId } },
       OR: [
         { fullname: { contains: search, mode: "insensitive" } },
         { email: { contains: search, mode: "insensitive" } }
@@ -30,6 +32,7 @@ console.log("Search query:", req.query.search);
         fullname: true,
         email: true,
         role: true,
+        plan: true,
         createdAt: true,
       },
       orderBy: {

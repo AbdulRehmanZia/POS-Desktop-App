@@ -14,18 +14,49 @@ export const addStoreMember = async (req, res) => {
     const { error } = registerMemberValidation.validate(req.body);
     if (error) return ApiError(res, 400, error.details[0].message);
 
-    const { fullname, email, password, storeId } = req.body;
+    const { fullname, email, password } = req.body;
+    const storeId = req.store.id;
 
-    // Check if user exists (active or soft-deleted)
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
+
+
+    const store = await prisma.store.findUnique({
+      where: { id: storeId },
+      include: { owner: true, members: true },
     });
+
+    if (!store) {
+      return ApiError(res, 404, "Store not found");
+    }
+
+    const userPlan = store.owner.plan || "basic";
+
+    const planLimits = {
+      basic: 3,
+      standard: 7,
+      premium: Infinity, // unlimited
+    };
+
+    const memberCount = await prisma.user.count({
+      where: {
+        memberOfStores: { some: { id: storeId } },
+        isDeleted: false,
+      },
+    });
+
+    if (memberCount >= planLimits[userPlan]) {
+      return ApiError(
+        res,
+        403,
+        `Member limit reached for your plan (${userPlan}). Upgrade to add more members.`
+      );
+    }
+
+    const existingUser = await prisma.user.findUnique({ where: { email } });
 
     if (existingUser) {
       if (!existingUser.isDeleted) {
         return ApiError(res, 400, "User With This Email Already Exists");
       } else {
-        // Restore soft-deleted user
         const restoredUser = await prisma.user.update({
           where: { id: existingUser.id },
           data: {
@@ -33,6 +64,9 @@ export const addStoreMember = async (req, res) => {
             password,
             role: "cashier",
             isDeleted: false,
+            memberOfStores: {
+              connect: { id: storeId },
+            },
           },
           select: { id: true, fullname: true, email: true, role: true },
         });
@@ -43,30 +77,27 @@ export const addStoreMember = async (req, res) => {
           message: generateEmailTemplate({
             message: `
               <p>Hi <strong>${fullname}</strong>,</p>
-              <p>Your account has been re-activated successfully.</p>
+              <p>Your account has been re-activated successfully for store <b>${req.store.name}</b>.</p>
               <p><strong>Email:</strong> ${email}<br />
               <strong>Password:</strong> ${password}</p>
-              <p>Please keep this information safe.</p>
             `,
           }),
         });
 
-        return ApiResponse(res, 200, restoredUser, "Store Member Restored Successfully");
+        return ApiResponse(res, 200, restoredUser, "Store Member Restored & Added Successfully");
       }
     }
 
-    // Otherwise, create new user
     const newMember = await prisma.user.create({
       data: {
         fullname,
         email,
         password,
         role: "cashier",
+        memberOfStores: {
+          connect: { id: storeId },
+        },
       },
-    });
-
-    const createdMember = await prisma.user.findUnique({
-      where: { id: newMember.id },
       select: { id: true, fullname: true, email: true, role: true },
     });
 
@@ -76,7 +107,8 @@ export const addStoreMember = async (req, res) => {
       message: generateEmailTemplate({
         message: `
           <p>Hi <strong>${fullname}</strong>,</p>
-          <p>Welcome to our POS system! Your account has been successfully created.</p>
+          <p>Welcome to store <b>${req.store.name}</b>!</p>
+          <p>Your account has been successfully created.</p>
           <p><strong>Email:</strong> ${email}<br />
           <strong>Password:</strong> ${password}</p>
           <p>Please keep this information safe.</p>
@@ -84,9 +116,9 @@ export const addStoreMember = async (req, res) => {
       }),
     });
 
-    return ApiResponse(res, 201, createdMember, "Store Member Added Successfully");
+    return ApiResponse(res, 201, newMember, "Store Member Added Successfully");
   } catch (error) {
-    console.log("Error in registerTeamMember", error);
+    console.log("Error in addStoreMember:", error);
     return ApiError(res, 500, "Internal Server Error");
   }
 };

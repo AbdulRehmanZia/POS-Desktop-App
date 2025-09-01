@@ -6,6 +6,7 @@ import ApiResponse from "../../../utils/ApiResponse.js";
 export const deleteProduct = async (req, res) => {
   try {
     const productId = req.params.id;
+    const userId = req.user.id;
 
     const productExist = await prisma.product.findUnique({
       where: { id: Number(productId) },
@@ -15,6 +16,20 @@ export const deleteProduct = async (req, res) => {
       return ApiError(res, 404, null, "Product not found");
     }
 
+    // Verify ownership of the store
+    const store = await prisma.store.findFirst({
+      where: {
+        id: productExist.storeId,
+        isDeleted: false,
+        ownerId: userId,
+      },
+    });
+
+    if (!store) {
+      return ApiError(res, 403, null, "No access to this store");
+    }
+
+    // Soft delete product
     await prisma.product.update({
       where: { id: Number(productId) },
       data: { isDeleted: true },

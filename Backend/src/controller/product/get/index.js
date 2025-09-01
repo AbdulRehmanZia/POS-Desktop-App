@@ -17,6 +17,7 @@ export const getAllProducts = async (req, res) => {
   try {
     const whereClause = {
       isDeleted: false,
+       storeId: req.store.id,
       AND: [
         { name: { contains: search, mode: "insensitive" } },
         { price: { gte: minPrice } },

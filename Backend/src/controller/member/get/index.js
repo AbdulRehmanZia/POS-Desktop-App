@@ -11,8 +11,13 @@ export const getAllStoreMembers = async (req, res) => {
     if (limit <= 0 || limit > 100) limit = 10;
     const skip = (page - 1) * limit;
 
+    const storeId = req.store.id;
+
     const allMembers = await prisma.user.findMany({
-      where: { isDeleted: false }, // Only active 
+      where: {
+        isDeleted: false,
+        memberOfStores: { some: { id: storeId } } 
+      },
       select: { id: true, fullname: true, email: true, role: true },
       orderBy: { createdAt: "desc" },
       skip,
@@ -20,18 +25,24 @@ export const getAllStoreMembers = async (req, res) => {
     });
 
     const totalMembers = await prisma.user.count({
-      where: { isDeleted: false },
+      where: {
+        isDeleted: false,
+        memberOfStores: { some: { id: storeId } }
+      },
     });
 
     const totalPages = Math.ceil(totalMembers / limit);
 
-    return ApiResponse(res, 200, allMembers, "All Members Fetched Successfully", {
+    return ApiResponse(res, 200, allMembers, "Store Members Fetched Successfully", {
       totalPages,
       currentPage: page,
       limit,
     });
   } catch (error) {
-    console.log("Error in getAllStoreMembers", error);
+    console.log("Error in getAllStoreMembers:", error);
     return ApiError(res, 500, "Internal Server Error");
   }
 };
+
+
+

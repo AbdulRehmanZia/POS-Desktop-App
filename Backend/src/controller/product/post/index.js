@@ -5,32 +5,68 @@ import ApiResponse from "../../../utils/ApiResponse.js";
 // Add Product
 export const addProduct = async (req, res) => {
   try {
+    const storeId = req.store.id;
     let { name, price, costPrice, stockQuantity, unit, categoryId, barcode } = req.body;
 
     if (!name || !price || !costPrice || !stockQuantity || !unit || !categoryId) {
       return ApiError(res, 400, null, "Please Fill The Required Fields");
     }
 
+    const store = await prisma.store.findUnique({
+      where: { id: storeId },
+      include: { owner: true },
+    });
+
+    if (!store) {
+      return ApiError(res, 404, null, "Store not found");
+    }
+
+    const userPlan = store.owner.plan;
+
+    const planLimits = {
+      basic: 100,
+      standard: 1000,
+      premium: Infinity, 
+    };
+
+    const productCount = await prisma.product.count({
+      where: { storeId, isDeleted: false },
+    });
+
+    if (productCount >= planLimits[userPlan]) {
+      return ApiError(
+        res,
+        403,
+        null,
+        `Product limit reached for your plan (${userPlan}). Upgrade to add more.`
+      );
+    }
+
     // Normalize product name
     let productName = name.trim().toLowerCase().replace(/\s+/g, " ");
 
-    // Check category exists & is active
-    const category = await prisma.category.findUnique({
-      where: { id: Number(categoryId) },
+    const category = await prisma.category.findFirst({
+      where: {
+        id: Number(categoryId),
+        storeId,
+        isDeleted: false,
+      },
     });
 
-    if (!category || category.isDeleted) {
-      return ApiError(res, 404, null, "Category not found or deleted");
+    if (!category) {
+      return ApiError(res, 404, null, "Category not found in this store");
     }
 
-    // Check if product exists
     const existingProduct = await prisma.product.findFirst({
-      where: { name: productName },
+      where: {
+        name: productName,
+        storeId,
+      },
     });
 
     if (existingProduct) {
       if (!existingProduct.isDeleted) {
-        return ApiError(res, 400, "This Product Already Exists");
+        return ApiError(res, 400, null, "This Product Already Exists in this store");
       } else {
         // Restore product
         const restoredProduct = await prisma.product.update({
@@ -41,14 +77,13 @@ export const addProduct = async (req, res) => {
             costPrice: parseFloat(costPrice),
             stockQuantity: parseInt(stockQuantity),
             unit,
-            category: { connect: { id: Number(categoryId) } },
+            categoryId: Number(categoryId),
           },
         });
         return ApiResponse(res, 200, restoredProduct, "Product Restored Successfully");
       }
     }
 
-    // Otherwise, create new product
     const newProduct = await prisma.product.create({
       data: {
         name: productName,
@@ -56,7 +91,9 @@ export const addProduct = async (req, res) => {
         costPrice: parseFloat(costPrice),
         stockQuantity: parseInt(stockQuantity),
         unit,
-        category: { connect: { id: Number(categoryId) } },
+        barcode,
+        storeId,
+        categoryId: Number(categoryId),
       },
     });
 

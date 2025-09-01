@@ -12,7 +12,8 @@ export const getAllCategories = async (req, res) => {
 
     const categories = await prisma.category.findMany({
       where: {
-        isDeleted: false, // only active
+        isDeleted: false,
+        storeId: req.store.id, 
       },
       include: {
         _count: {
@@ -32,7 +33,10 @@ export const getAllCategories = async (req, res) => {
       return ApiError(res, 404, "Categories Not Found");
 
     const totalCategories = await prisma.category.count({
-      where: { isDeleted: false },
+      where: {
+        isDeleted: false,
+        storeId: req.store.id, 
+      },
     });
 
     const totalPages = Math.ceil(totalCategories / limit);

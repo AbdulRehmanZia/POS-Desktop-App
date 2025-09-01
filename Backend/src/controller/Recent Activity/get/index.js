@@ -2,16 +2,22 @@
 import prisma from "../../../db/db.js";
 import ApiError from "../../../utils/ApiError.js";
 import ApiResponse from "../../../utils/ApiResponse.js";
+
 export const RecentActivity = async (req, res) => {
   try {
     const fifteenMinuteAgo = new Date(Date.now() - 15 * 60 * 1000);
-    // const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
-    // const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const storeId = req.store?.id || req.user?.storeId; 
+
+    if (!storeId) {
+      return ApiError(res, 400, null, "Store ID missing in request");
+    }
 
     const [users, sales, categories] = await Promise.all([
-      //  User Recent Activity
+      //User Recent Activity (scoped to store)
       prisma.user.findMany({
         where: {
+          storeId,
           OR: [
             { createdAt: { gte: fifteenMinuteAgo } },
             { updatedAt: { gte: fifteenMinuteAgo } },
@@ -25,9 +31,10 @@ export const RecentActivity = async (req, res) => {
         },
       }),
 
-      // Sales Recent Activity
+      // Sales Recent Activity (scoped to store)
       prisma.sale.findMany({
         where: {
+          storeId,
           OR: [
             { createdAt: { gte: fifteenMinuteAgo } },
             { updatedAt: { gte: fifteenMinuteAgo } },
@@ -52,13 +59,14 @@ export const RecentActivity = async (req, res) => {
         },
       }),
 
-      // Categor Recent Activity
+      // Categories Recent Activity (scoped to store)
       prisma.category.findMany({
         where: {
-          isDeleted: false, // works only if Boolean field hai
+          storeId,
+          isDeleted: false,
           OR: [
             { createdAt: { gte: fifteenMinuteAgo } },
-            { updatedAt: { gte: fifteenMinuteAgo  } },
+            { updatedAt: { gte: fifteenMinuteAgo } },
           ],
         },
         include: {
@@ -67,10 +75,10 @@ export const RecentActivity = async (req, res) => {
       }),
     ]);
 
-    const AllActivitie = { users, sales, categories };
-    ApiResponse(res, 200, AllActivitie, "All Activities fetch successfuly");
+    const AllActivities = { users, sales, categories };
+    return ApiResponse(res, 200, AllActivities, "All Activities fetched successfully");
   } catch (error) {
-    console.error(error);
-    ApiError(res, 500, error.messege, "Fetching Error");
+    console.error("RecentActivity error:", error);
+    return ApiError(res, 500, error.message || "Fetching Error");
   }
 };

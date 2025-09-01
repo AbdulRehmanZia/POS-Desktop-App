@@ -2,26 +2,28 @@ import prisma from "../../../db/db.js";
 import ApiError from "../../../utils/ApiError.js";
 import ApiResponse from "../../../utils/ApiResponse.js";
 
-// Delete Sale (soft delete)
+// Delete Sale (soft)
 export const deleteSale = async (req, res) => {
   try {
-    const saleId = req.params.id;
-    const saleExist = await prisma.sale.findUnique({
-      where: { id: Number(saleId) },
+    const saleId = Number(req.params.id);
+    const storeId = req.store.id; 
+
+    const saleExist = await prisma.sale.findFirst({
+      where: { id: saleId, storeId, isDeleted: false },
     });
 
     if (!saleExist) {
-      return ApiError(res, 404, null, "Sale not found");
+      return ApiError(res, 404, null, "Sale not found in this store");
     }
 
     await prisma.$transaction(async (tx) => {
       await tx.saleItem.updateMany({
-        where: { saleId: Number(saleId) },
+        where: { saleId, storeId },
         data: { isDeleted: true },
       });
 
       await tx.sale.update({
-        where: { id: Number(saleId) },
+        where: { id: saleId },
         data: { isDeleted: true },
       });
     });

@@ -6,26 +6,38 @@ import bcrypt from "bcrypt";
 // Update User
 export const updateUser = async (req, res) => {
   try {
-    const userId = req.params.id;
+    const userId = Number(req.params.id);
+    const storeId = req.store.id;
+
+    const member = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        memberOfStores: { some: { id: storeId } },
+        isDeleted: false
+      },
+    });
+
+    if (!member) {
+      return ApiError(res, 404, "User not found in this store");
+    }
+
 
     const { fullname, email, password, role } = req.body;
-
     const updatedData = {};
     if (fullname !== undefined) updatedData.fullname = fullname;
     if (email !== undefined) updatedData.email = email;
     if (password !== undefined) updatedData.password = password;
-    if (role != undefined) updatedData.role = role;
+    if (plan !== undefined) updatedData.plan = plan;
 
     if (Object.keys(updatedData).length === 0) {
       return ApiError(res, 400, "No valid fields provided for update");
     }
 
     const updatedUser = await prisma.user.update({
-      where: {
-        id: Number(userId),
-      },
+      where: { id: userId },
       data: updatedData,
       select: {
+        id: true,
         fullname: true,
         email: true,
         role: true,
@@ -38,6 +50,7 @@ export const updateUser = async (req, res) => {
     return ApiError(res, 500, "Internal Server Error", error);
   }
 };
+
 
 export const changePassword = async (req, res) => {
   try {

@@ -6,6 +6,7 @@ import ApiResponse from "../../../utils/ApiResponse.js";
 export const deleteCategory = async (req, res) => {
   try {
     const categoryId = req.params.id;
+    const userId = req.user.id;
 
     const categoryExist = await prisma.category.findUnique({
       where: { id: Number(categoryId) },
@@ -15,14 +16,24 @@ export const deleteCategory = async (req, res) => {
       return ApiError(res, 404, null, "Category not found");
     }
 
+    const store = await prisma.store.findFirst({
+      where: {
+        id: categoryExist.storeId,
+        isDeleted: false,
+        ownerId: userId, 
+      },
+    });
+
+    if (!store) {
+      return ApiError(res, 403, null, "No access to this store");
+    }
+
     await prisma.$transaction(async (tx) => {
-      // Soft delete all products under this category
       await tx.product.updateMany({
         where: { categoryId: Number(categoryId) },
         data: { isDeleted: true },
       });
 
-      // Soft delete category
       await tx.category.update({
         where: { id: Number(categoryId) },
         data: { isDeleted: true },

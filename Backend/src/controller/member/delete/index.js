@@ -5,18 +5,23 @@ import ApiResponse from "../../../utils/ApiResponse.js";
 // Delete Store Member
 export const deleteStoreMember = async (req, res) => {
   try {
-    const userId = Number(req.params.id);
+    const memberId = Number(req.params.id);
+    const storeId = req.store.id;
 
-    const userExist = await prisma.user.findUnique({
-      where: { id: userId },
+    const member = await prisma.user.findFirst({
+      where: {
+        id: memberId,
+        isDeleted: false,
+        memberOfStores: { some: { id: storeId } }
+      },
     });
 
-    if (!userExist) {
-      return ApiError(res, 404, null, "User not found");
+    if (!member) {
+      return ApiError(res, 404, null, "Member not found in this store");
     }
 
     await prisma.user.update({
-      where: { id: userId },
+      where: { id: memberId },
       data: { isDeleted: true },
     });
 

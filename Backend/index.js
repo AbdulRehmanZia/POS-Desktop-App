@@ -4,6 +4,7 @@ import app from "./src/app.js";
 import routes from "./src/routes/route.js";
 
 const PORT = process.env.PORT || 3000;
+const server = app.listen(PORT, () => console.log(`Server Is Running On Port: ${PORT}`));
 
 //Handle uncaught exceptions
 process.on("uncaughtException", (err) => {
@@ -11,6 +12,7 @@ process.on("uncaughtException", (err) => {
   console.error(err.name, err.message);
   process.exit(1);
 });
+
 
 //Handle unhandled promise rejections
 process.on("unhandledRejection", (err) => {
@@ -21,5 +23,4 @@ process.on("unhandledRejection", (err) => {
   });
 });
 
-app.listen(PORT, () => console.log(`Server Is Running On Port: ${PORT}`));
 app.use(routes);

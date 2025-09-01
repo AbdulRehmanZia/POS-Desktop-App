@@ -4,7 +4,7 @@ import storeMembersRouter from "./members.route.js";
 import categoryRouter from "./category.route.js";
 import productRouter from "./product.route.js";
 import saleRouter from "./sale.route.js";
-import storeRouter from "./store.router.js"
+import storeRouter from "./store.route.js"
 import AllAnalyst from "./analyst.route.js";
 const router = Router();
 

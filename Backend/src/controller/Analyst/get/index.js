@@ -1,35 +1,38 @@
 import prisma from "../../../db/db.js";
 import ApiError from "../../../utils/ApiError.js";
 import ApiResponse from "../../../utils/ApiResponse.js";
-import moment from "moment"; 
+import moment from "moment";
 
-//   All Analyst Query
-export const AllAnalyst = async (req, res) => {
+// All Analyst Query (store-bound)
+export const allAnalyst = async (req, res) => {
   try {
-    const storeId = req.store?.id || req.user?.storeId;
-
+    const storeId = req.store?.id;
     if (!storeId) {
       return ApiError(res, 400, null, "Store ID missing in request");
     }
 
-    // Members
+    // Total Members (store-bound)
     const totalMembers = await prisma.user.count({
-      where: { storeId },
-    });
-
-    // Products
-    const totalProducts = await prisma.product.count({
-      where: { storeId },
-    });
-
-    // Sale Items
-    const totalSaleItems = await prisma.saleItem.count({
       where: {
-        sale: { storeId },
+        isDeleted: false,
+        OR: [
+          { memberOfStores: { some: { id: storeId } } },
+          { ownedStores: { some: { id: storeId } } },
+        ],
       },
     });
 
-    // Sales Amount
+    // Total Products
+    const totalProducts = await prisma.product.count({
+      where: { storeId, isDeleted: false },
+    });
+
+    // Total Sale Items
+    const totalSaleItems = await prisma.saleItem.count({
+      where: { sale: { storeId } },
+    });
+
+    // Total Sales Amount
     const totalSalesAmount = await prisma.sale.aggregate({
       where: { storeId },
       _sum: { totalAmount: true },
@@ -37,20 +40,15 @@ export const AllAnalyst = async (req, res) => {
 
     // Category-wise Product Count
     const categoryWiseProductCount = await prisma.category.findMany({
-      where: {
-        storeId,
-        isDeleted: false,
-      },
+      where: { storeId, isDeleted: false },
       select: {
         id: true,
         name: true,
-        _count: {
-          select: { products: true },
-        },
+        _count: { select: { products: true } },
       },
     });
 
-    // Daily Sales Grouped
+    // Grouped Sales by Day
     const groupedSales = await prisma.sale.groupBy({
       by: ["createdAt"],
       where: { storeId },
@@ -60,14 +58,13 @@ export const AllAnalyst = async (req, res) => {
 
     const dailySales = groupedSales.reduce((acc, item) => {
       const dateOnly = moment(item.createdAt).format("DD-MM-YYYY");
-      if (!acc[dateOnly]) {
-        acc[dateOnly] = 0;
-      }
+      if (!acc[dateOnly]) acc[dateOnly] = 0;
       acc[dateOnly] += item._sum.totalAmount || 0;
       return acc;
     }, {});
 
-    const Summary = {
+    // Response
+    const summary = {
       totalMembers,
       totalProducts,
       totalSaleItems,
@@ -76,9 +73,9 @@ export const AllAnalyst = async (req, res) => {
       categoryWiseProductCount,
     };
 
-    return ApiResponse(res, 200, Summary, "Summary Fetched Successfully");
+    return ApiResponse(res, 200, summary, "Summary Fetched Successfully");
   } catch (error) {
     console.error("AllAnalyst error:", error);
-    return ApiError(res, 500, error.message || "Fetching Error");
+    return ApiError(res, 500, error.message || "Internal Server Error", "Fetching Error");
   }
 };

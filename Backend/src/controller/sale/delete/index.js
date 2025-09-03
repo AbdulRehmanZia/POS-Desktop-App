@@ -7,7 +7,7 @@ export const deleteSale = async (req, res) => {
   try {
     const saleId = Number(req.params.id);
     const storeId = req.store.id; 
-
+    // Check if the sale exists in this store
     const saleExist = await prisma.sale.findFirst({
       where: { id: saleId, storeId, isDeleted: false },
     });
@@ -18,7 +18,13 @@ export const deleteSale = async (req, res) => {
 
     await prisma.$transaction(async (tx) => {
       await tx.saleItem.updateMany({
-        where: { saleId, storeId },
+        where: {
+          sale: {
+            id: saleId,
+            storeId,
+            isDeleted: false,
+          },
+        },
         data: { isDeleted: true },
       });
 

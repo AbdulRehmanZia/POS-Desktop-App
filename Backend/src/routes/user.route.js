@@ -24,7 +24,7 @@ router.get("/", verifyJWT, getUsers);
 router.post("/logout", verifyJWT, logoutUser);
 router.put("/update/:id", verifyJWT, updateUser);
 router.put("/change-password", verifyJWT, changePassword)
-router.delete("/delete/:id", verifyJWT, deleteUser);
+router.put("/delete/:id", verifyJWT, deleteUser);
 router.post("/refresh-token", verifyJWT, refreshAccessToken);
 router.post("/forget-password", forgetPassword)
 router.post("/reset-password", resetPassword)

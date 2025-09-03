@@ -12,6 +12,7 @@ import {
   resetPassword,
   updateUser,
 } from "../controller/user/index.js";
+import { updatePlan } from "../controller/user/updatePlan/index.js";
 
 const router = Router();
 
@@ -28,5 +29,6 @@ router.put("/delete/:id", verifyJWT, deleteUser);
 router.post("/refresh-token", verifyJWT, refreshAccessToken);
 router.post("/forget-password", forgetPassword)
 router.post("/reset-password", resetPassword)
+router.put("/update-plan/:id", updatePlan)
 
 export default router;

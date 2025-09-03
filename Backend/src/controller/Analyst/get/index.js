@@ -63,7 +63,6 @@ export const allAnalyst = async (req, res) => {
       return acc;
     }, {});
 
-    // Response
     const summary = {
       totalMembers,
       totalProducts,

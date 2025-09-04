@@ -103,14 +103,14 @@ export default function CreateStore() {
             </motion.button>
           </form>
 
-          {/* <div className="mt-6 text-center">
+          <div className="mt-6 text-center">
             <button
               onClick={() => navigate("/stores")}
               className="text-sm text-[#1C3333] cursor-pointer hover:text-[#1C3333]/70 hover:underline"
             >
               Already have stores? View all stores
             </button>
-          </div> */}
+          </div>
         </div>
       </motion.div>
     </div>

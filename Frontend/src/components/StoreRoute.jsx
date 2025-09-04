@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { StoreContext } from "../context/StoreContext";
 import { UserContext } from "../context/UserContext";
@@ -13,19 +13,18 @@ const StoreRoute = ({ children }) => {
   } = useContext(StoreContext);
 
   const { user } = useContext(UserContext);
+  const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
 
   if (!user) return <Navigate to="/login" replace />;
 
   useEffect(() => {
-    // Always fetch stores when component mounts for both cashier and other roles
-    // This ensures we have store data and can set the store-id header
-    if (userStores.length === 0) {
+    if (userStores.length === 0 && !hasAttemptedFetch) {
+      setHasAttemptedFetch(true);
       fetchUserStores();
     }
-  }, [userStores.length, fetchUserStores]);
+  }, [userStores.length, fetchUserStores, hasAttemptedFetch]);
 
-  // Show loading while fetching stores
-  if (isLoadingStores) {
+  if (isLoadingStores || (userStores.length === 0 && hasAttemptedFetch)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#1C3333]">
         <div className="text-white flex items-center gap-3">
@@ -36,28 +35,31 @@ const StoreRoute = ({ children }) => {
     );
   }
 
-  // If user has no stores
-  if (!hasStores) {
-    // Cashiers can't create stores, so show error message
+  if (!hasStores && !isLoadingStores) {
     if (user.role === "cashier") {
       return (
         <div className="min-h-screen flex items-center justify-center bg-[#1C3333]">
           <div className="text-center text-white">
             <div className="mb-4">
               <h2 className="text-xl font-bold">No Store Access</h2>
-              <p className="text-gray-300">You don't have access to any stores. Please contact your administrator.</p>
+              <p className="text-gray-300">
+                You don't have access to any stores. Please contact your administrator.
+              </p>
             </div>
           </div>
         </div>
       );
     }
-    // Only admins can create stores when they have no stores
-    return <Navigate to="/create-store" replace />;
+
+    if (user.role === "admin") {
+      return <Navigate to="/create-store" replace />;
+    }
+
+    
   }
 
   // Wait for currentStore to be set automatically by StoreContext
-  // The StoreContext will automatically set the first store when stores are loaded
-  if (!currentStore) {
+  if (hasStores && !currentStore) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#1C3333]">
         <div className="text-white flex items-center gap-3">
@@ -68,7 +70,6 @@ const StoreRoute = ({ children }) => {
     );
   }
 
-  // All checks passed, render the protected component
   return children;
 };
 

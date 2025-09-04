@@ -3,7 +3,7 @@ import ApiError from "../../../utils/ApiError.js";
 import ApiResponse from "../../../utils/ApiResponse.js";
 import moment from "moment";
 
-// All Analyst Query (store-bound)
+// All Analyst Query 
 export const allAnalyst = async (req, res) => {
   try {
     const storeId = req.store?.id;
@@ -11,7 +11,7 @@ export const allAnalyst = async (req, res) => {
       return ApiError(res, 400, null, "Store ID missing in request");
     }
 
-    // Total Members (store-bound)
+    // Total Members 
     const totalMembers = await prisma.user.count({
       where: {
         isDeleted: false,

@@ -31,6 +31,11 @@ export default function SideBar({ children }) {
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
 
+  // Get only the last two latest stores
+  const latestStores = userStores
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+    .slice(0, 2);
+
   const navItems = [
     {
       name: "Dashboard",
@@ -68,12 +73,7 @@ export default function SideBar({ children }) {
       roles: ["admin"],
       icon: <RiTeamLine className="h-5 w-5" />,
     },
-    {
-    name: "Stores",
-    path: "/stores",
-    roles: ["admin", "cashier"],
-    icon: <Store className="h-5 w-5" />,
-  },
+    
   ];
 
   // Close dropdown when clicking outside
@@ -188,7 +188,7 @@ export default function SideBar({ children }) {
             })}
         </nav>
 
-        {/* Store Selection (Positioned above Logout) */}
+        {/* Store Selection (Now includes Logout) */}
         <div className="border-t border-[#F4F9F9]/20 px-3 py-4 mt-auto">
           <div className="relative" ref={dropdownRef}>
             <button
@@ -215,9 +215,9 @@ export default function SideBar({ children }) {
               <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden">
                 <div className="p-2">
                   <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide">
-                    Your Stores
+                    Recent Stores
                   </div>
-                  {userStores.map((store) => (
+                  {latestStores.map((store) => (
                     <button
                       key={store.id}
                       onClick={() => handleStoreSwitch(store)}
@@ -245,7 +245,17 @@ export default function SideBar({ children }) {
                     onClick={handleSwitchStores}
                     className="w-full px-3 py-2 text-sm text-[#1C3333] hover:bg-gray-100 rounded-md transition-colors text-left cursor-pointer"
                   >
-                    Switch Store / View All
+                    View All Stores
+                  </button>
+                </div>
+                {/* Logout Button inside dropdown */}
+                <div className="border-t border-gray-200 p-2">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
+                  >
+                    <BiLogOut className="h-4 w-4" />
+                    <span>Logout</span>
                   </button>
                 </div>
               </div>
@@ -253,17 +263,7 @@ export default function SideBar({ children }) {
           </div>
         </div>
 
-        {/* Logout Button */}
-        <div className="border-t border-[#F4F9F9]/20 px-3 py-4">
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 w-full text-sm font-medium text-red-300 hover:bg-red-400/20 transition-colors cursor-pointer"
-            title={!isOpen ? "Logout" : ""}
-          >
-            <BiLogOut className="h-5 w-5" />
-            {isOpen && <span>Logout</span>}
-          </button>
-        </div>
+        {/* Logout Button (Removed from outside, now inside dropdown) */}
       </div>
 
       {/* Main Content */}

@@ -20,6 +20,12 @@ import { UserContext } from "../context/UserContext";
 import { api } from "../Instance/api";
 import toast from "react-hot-toast";
 import ConfirmModal from "../components/ConfirmModal";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "../components/ui/sheet";
 
 export default function StoreSelection() {
   const navigate = useNavigate();
@@ -36,6 +42,9 @@ export default function StoreSelection() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [storeToDelete, setStoreToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [editingStore, setEditingStore] = useState(null);
+  const [storeName, setStoreName] = useState("");
 
   useEffect(() => {
     fetchUserStores();
@@ -48,7 +57,51 @@ export default function StoreSelection() {
   };
 
   const handleCreateNew = () => {
-    navigate("/create-store");
+    setEditingStore(null);
+    setStoreName("");
+    setIsSheetOpen(true);
+  };
+
+  const handleEditStore = (store, e) => {
+    e.stopPropagation();
+    if (store.ownerId !== user.id) {
+      toast.error("Only store owners can edit stores");
+      return;
+    }
+    setEditingStore(store);
+    setStoreName(store.name);
+    setIsSheetOpen(true);
+  };
+
+  const handleSaveStore = async () => {
+    if (!storeName.trim()) {
+      toast.error("Store name is required");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (editingStore) {
+        // Update existing store
+        await api.put(`/stores/update/${editingStore.id}`, { name: storeName.trim() });
+        toast.success("Store updated successfully");
+      } else {
+        // Create new store
+        await api.post("/stores/create", { name: storeName.trim() });
+        toast.success("Store created successfully");
+      }
+      
+      // Refresh stores list
+      await fetchUserStores();
+      setIsSheetOpen(false);
+      setEditingStore(null);
+      setStoreName("");
+    } catch (error) {
+      toast.error(error.response?.data?.message || 
+        (editingStore ? "Failed to update store" : "Failed to create store"));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getUserRole = (store) => {
@@ -96,13 +149,68 @@ export default function StoreSelection() {
   if (isLoadingStores) {
     return (
       <div className="flex justify-center items-center h-64">
-             <Loader className="animate-spin h-10 w-10 text-[#1C3333]" />
-           </div>
+        <Loader className="animate-spin h-10 w-10 text-[#1C3333]" />
+      </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-[#F4F9F9] p-6">
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md bg-[#F4F9F9]">
+          <SheetHeader className="mb-6">
+            <SheetTitle className="text-[#1C3333]">
+              {editingStore ? "Edit Store" : "Create New Store"}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="space-y-4 p-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-[#1C3333]">
+                Store Name
+              </label>
+              <input
+                value={storeName}
+                onChange={(e) => setStoreName(e.target.value)}
+                placeholder="Enter store name"
+                className="w-full px-3 py-2 border border-[#1C3333]/30 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1C3333] focus:border-[#1C3333] text-[#1C3333] bg-white cursor-pointer"
+                required
+              />
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSheetOpen(false);
+                  setEditingStore(null);
+                  setStoreName("");
+                }}
+                className="px-4 py-2 border border-[#1C3333]/30 rounded-md shadow-sm text-sm font-medium text-[#1C3333] bg-white hover:bg-[#F4F9F9] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveStore}
+                disabled={loading || !storeName.trim()}
+                className="px-4 py-2 cursor-pointer border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#1C3333] hover:bg-[#1C3333]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1C3333] disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <Loader className="animate-spin mr-2 h-4 w-4 inline" />
+                    {editingStore ? "Updating..." : "Creating..."}
+                  </>
+                ) : editingStore ? (
+                  "Update Store"
+                ) : (
+                  "Create Store"
+                )}
+              </button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
       <div className="bg-white rounded-lg border border-[#1C3333]/20 overflow-hidden">
         <div className="px-4 py-3 border-b border-[#1C3333]/20 bg-[#F4F9F9]">
           <div className="flex flex-col sm:flex-row gap-3 justify-between items-center">
@@ -213,13 +321,21 @@ export default function StoreSelection() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         {getUserRole(store) === "Owner" && (
-                          <button
-                            onClick={(e) => handleDeleteClick(store, e)}
-                            disabled={loading}
-                            className="text-[#FF6F61] cursor-pointer hover:text-[#FF6F61]/80 p-1 rounded-md hover:bg-[#FF6F61]/10"
-                          >
-                            <Trash2 className="h-5 w-5" />
-                          </button>
+                          <>
+                            <button
+                              onClick={(e) => handleEditStore(store, e)}
+                              className="text-[#1C3333] cursor-pointer hover:text-[#1C3333]/70 p-1 rounded-md hover:bg-[#1C3333]/10"
+                            >
+                              <Edit className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteClick(store, e)}
+                              disabled={loading}
+                              className="text-[#FF6F61] cursor-pointer hover:text-[#FF6F61]/80 p-1 rounded-md hover:bg-[#FF6F61]/10"
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>

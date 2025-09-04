@@ -27,7 +27,7 @@ export const createStore = async (req, res) => {
     };
 
     const storeCount = await prisma.store.count({
-      where: { ownerId: userId }
+      where: { ownerId: userId,isDeleted: false, }
     });
 
     if (storeCount >= planLimits[user.plan]) {
@@ -38,7 +38,29 @@ export const createStore = async (req, res) => {
       );
     }
 
-    // Create store
+    // Restore Store
+    
+const existingStore = await prisma.store.findFirst({
+  where: {
+    name,
+    ownerId: userId,  
+  },
+});
+
+if (existingStore) {
+  if (!existingStore.isDeleted) {
+    return ApiError(res, 400, "This store already exists");
+  } else {
+    const restoredStore = await prisma.store.update({
+      where: { id: existingStore.id },
+      data: { isDeleted: false },
+    });
+    return ApiResponse(res, 200, restoredStore, "Store restored successfully");
+  }
+}
+
+    
+    // Create Store
 
     const store = await prisma.store.create({
       data: {

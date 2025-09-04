@@ -7,8 +7,8 @@ import helmet from "helmet"
 const app = express()
 
 app.use(cors({
-  origin: 'http://localhost:5173', //frontend URL 
-  credentials: true, //for cookies
+  origin: ['http://localhost:5173', 'http://localhost:8080'], //This is for multiple origins
+  credentials: true, // for cookies 
 }));
 
 app.use(helmet())

@@ -35,7 +35,7 @@ export default function MemberTable({ refreshKey }) {
     setError(null);
 
     const res = await api.get(
-  `user/?page=${pagination.page}&limit=${pagination.limit}&search=${searchTerm}`
+  `admin/members?page=${pagination.page}&limit=${pagination.limit}&search=${searchTerm}`
 );
 
     // Debugging log

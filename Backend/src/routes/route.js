@@ -9,7 +9,7 @@ import AllAnalyst from "./analyst.route.js";
 const router = Router();
 
 router.use("/api/v1/user", userRouter);
-router.use("/api/v1/store",storeRouter );
+router.use("/api/v1/stores",storeRouter );
 router.use("/api/v1/analyst", AllAnalyst);
 router.use("/api/v1/admin/members", storeMembersRouter);
 router.use("/api/v1/admin/categories", categoryRouter);

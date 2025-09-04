@@ -19,6 +19,7 @@ const router = Router();
 //Public
 router.post("/register", registerUser);
 router.post("/login", loginUser);
+router.put("/update-plan/:id", updatePlan)
 
 //Protected
 router.get("/", verifyJWT, getUsers);
@@ -29,6 +30,5 @@ router.put("/delete/:id", verifyJWT, deleteUser);
 router.post("/refresh-token", verifyJWT, refreshAccessToken);
 router.post("/forget-password", forgetPassword)
 router.post("/reset-password", resetPassword)
-router.put("/update-plan/:id", updatePlan)
 
 export default router;

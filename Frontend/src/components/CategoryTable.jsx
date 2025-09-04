@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { api } from "../Instance/api";
-import { Trash2, Edit, Loader, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Trash2, Edit, Loader, AlertCircle, ChevronLeft, ChevronRight, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { UserContext } from "../context/UserContext";
 import {
@@ -43,8 +43,19 @@ export default function CategoryTable({ refreshKey }) {
       }));
     } catch (error) {
       console.error("Error fetching categories", error);
-      setError("Failed to load categories");
-      toast.error("Failed to load categories");
+      
+      // Handle 404 specifically
+      if (error.response?.status === 404) {
+        setCategories([]);
+        setPagination(prev => ({
+          ...prev,
+          totalPages: 1,
+          totalItems: 0
+        }));
+        return;
+      }
+      
+      // setError("Failed to load categories");
     } finally {
       setLoading(false);
     }
@@ -245,25 +256,27 @@ export default function CategoryTable({ refreshKey }) {
       )}
 
       {/* Bottom pagination navigation */}
-      <div className="px-4 py-3 flex justify-center space-x-2 border-t border-[#1C3333]/20 bg-[#F4F9F9]">
-        <button
-          onClick={() => handlePageChange(pagination.page - 1)}
-          disabled={pagination.page === 1}
-          className="px-3 py-1 border cursor-pointer border-[#1C3333]/30 rounded-md text-sm font-medium text-[#1C3333] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#1C3333]/10"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-        <span className="px-3 py-1 text-sm text-[#1C3333] flex items-center">
-          Page {pagination.page} of {pagination.totalPages}
-        </span>
-        <button
-          onClick={() => handlePageChange(pagination.page + 1)}
-          disabled={pagination.page === pagination.totalPages}
-          className="px-3 py-1 border cursor-pointer border-[#1C3333]/30 rounded-md text-sm font-medium text-[#1C3333] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#1C3333]/10"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      </div>
+      {pagination.totalPages > 1 && (
+        <div className="px-4 py-3 flex justify-center space-x-2 border-t border-[#1C3333]/20 bg-[#F4F9F9]">
+          <button
+            onClick={() => handlePageChange(pagination.page - 1)}
+            disabled={pagination.page === 1}
+            className="px-3 py-1 border cursor-pointer border-[#1C3333]/30 rounded-md text-sm font-medium text-[#1C3333] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#1C3333]/10"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="px-3 py-1 text-sm text-[#1C3333] flex items-center">
+            Page {pagination.page} of {pagination.totalPages}
+          </span>
+          <button
+            onClick={() => handlePageChange(pagination.page + 1)}
+            disabled={pagination.page === pagination.totalPages}
+            className="px-3 py-1 border cursor-pointer border-[#1C3333]/30 rounded-md text-sm font-medium text-[#1C3333] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#1C3333]/10"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       <ConfirmModal
         open={deleteModalOpen}

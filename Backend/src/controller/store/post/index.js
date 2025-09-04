@@ -10,6 +10,35 @@ export const createStore = async (req, res) => {
     if (!name) {
       return ApiError(res, 400, "Store name is required");
     }
+// Checking Plan
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, plan: true }
+    });
+
+    if (!user) {
+      return ApiError(res, 404, "User not found");
+    }
+
+    const planLimits = {
+      basic: 1,      
+      standard: 3,    
+      premium: 10, 
+    };
+
+    const storeCount = await prisma.store.count({
+      where: { ownerId: userId }
+    });
+
+    if (storeCount >= planLimits[user.plan]) {
+      return ApiError(
+        res,
+        403,
+        `Store limit reached for your plan (${user.plan}). Upgrade to add more.`
+      );
+    }
+
+    // Create store
 
     const store = await prisma.store.create({
       data: {

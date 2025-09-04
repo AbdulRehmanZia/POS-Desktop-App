@@ -13,7 +13,7 @@ const UserContextProvider = ({ children }) => {
     return localStorage.getItem("accessToken") || null;
   });
 
-  const [isLoading, setIsLoading] = useState(true); 
+  const [isLoading, setIsLoading] = useState(true);
 
   // Auto-login check on app startup
   useEffect(() => {
@@ -70,6 +70,10 @@ const UserContextProvider = ({ children }) => {
       setAccessToken(null);
       localStorage.clear();
       delete api.defaults.headers.common['Authorization'];
+      delete api.defaults.headers.common['store-id'];
+      
+      // Trigger store context to clear its data
+      window.dispatchEvent(new CustomEvent('user-logout'));
     } catch (err) {
       console.error("Logout failed", err);
     }

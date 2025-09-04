@@ -5,7 +5,7 @@ import StatCards from "../components/StateCards";
 import CategoryWiseProducts from "../components/CategoryWiseProducts";
 import DailySalesChart from "../components/DailySalesChart";
 import RecentActivity from "../components/RecentActivity";
-import { ShoppingCart } from "lucide-react";
+import { Loader, ShoppingCart } from "lucide-react";
 
 export default function Dashboard() {
   const [analyst, setAnalyst] = useState(null);
@@ -62,9 +62,9 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <div className="h-64 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2F4F4F]"></div>
-          </div>
+          <div className="flex justify-center items-center h-64">
+             <Loader className="animate-spin h-10 w-10 text-[#1C3333]" />
+           </div>
         </div>
       </div>
     );

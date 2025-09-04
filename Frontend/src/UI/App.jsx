@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import Sidebar from "../components/SideBar";
 import Product from "../pages/Product";
@@ -8,29 +8,59 @@ import Dashboard from "../pages/Dashboard";
 import Category from "../pages/Category";
 import Member from "../pages/Member";
 import ProtectedRoute from "../components/ProtectedRoute";
+import StoreRoute from "../components/StoreRoute";
 import Login from "../pages/Login";
 import ForgetPassword from "../pages/ForgetPassword";
 import ResetPassword from "../pages/ResetPassword";
 import NewSale from "../pages/NewSale";
+import CreateStore from "../pages/CreateStore";
+import StoreSelection from "../pages/StoreSelection";
 import { UserContext } from "../context/UserContext";
+import { StoreContext } from "../context/StoreContext";
 
-function App() {
+export default function App() {
   const { user } = useContext(UserContext);
+  const { currentStore, hasStores } = useContext(StoreContext);
+
   return (
     <>
       <Toaster position="top-right" reverseOrder={false} />
       <Routes>
-        {/* Public route */}
+        {/* Public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/forget-password" element={<ForgetPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* Protected route */}
+        {/* Store management routes - protected but don't require store selection */}
+        <Route
+          path="/create-store"
+          element={
+            <ProtectedRoute>
+              <CreateStore />
+            </ProtectedRoute>
+          }
+        />
+        
+        {/* Store Selection - Now globally accessible with Sidebar */}
+        <Route
+          path="/stores"
+          element={
+            <ProtectedRoute>
+              <Sidebar>
+                <StoreSelection />
+              </Sidebar>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Dashboard routes - require both auth and store selection */}
         <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <Sidebar />
+              <StoreRoute>
+                <Sidebar />
+              </StoreRoute>
             </ProtectedRoute>
           }
         >
@@ -45,10 +75,10 @@ function App() {
           <Route path="sale" element={<Sales />} />
         </Route>
 
-        <Route path="*" element={<Login />} />
+        {/* Default redirects */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </>
   );
 }
-
-export default App;

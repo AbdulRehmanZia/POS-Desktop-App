@@ -6,9 +6,8 @@ import {
 import ApiError from "../../../utils/ApiError.js";
 import ApiResponse from "../../../utils/ApiResponse.js";
 import { loginValidation } from "../../../utils/validationSchema.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcrypt"
 
-//Login User
 //Login User
 export const loginUser = async (req, res) => {
   try {
@@ -20,46 +19,12 @@ export const loginUser = async (req, res) => {
       return ApiError(res, 400, "Please Enter Both Email and Password");
     }
 
-    // Super Admin check
-    if (
-      email === process.env.SUPER_ADMIN_EMAIL &&
-      password === process.env.SUPER_ADMIN_PASSWORD
-    ) {
-      const superAdmin = {
-        id: "superadmin",
-        fullname: "Super Admin",
-        email,
-        role: "super-admin",
-      };
-
-      const accessToken = generateAccessToken(superAdmin);
-      const refreshToken = generateRefreshToken(superAdmin);
-
-      const options = {
-        secure: true,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      };
-
-      res.cookie("accessToken", accessToken, options);
-      res.cookie("refreshToken", refreshToken, options);
-
-      return ApiResponse(
-        res,
-        201,
-        { user: superAdmin, accessToken, refreshToken },
-        "Super Admin Logged In Successfully"
-      );
-    }
-
-    //  Normal User check
     const user = await prisma.user.findUnique({
       where: { email },
     });
-
     if (!user) return ApiError(res, 404, "User Does Not Exist");
-
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return ApiError(res, 401, "Invalid Credentials");
+    if (!isMatch) return ApiError(res, 401, "In-valid Credentials");
 
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
@@ -74,7 +39,7 @@ export const loginUser = async (req, res) => {
         id: true,
         fullname: true,
         email: true,
-        role: true,
+        role:true
       },
     });
 
@@ -82,13 +47,13 @@ export const loginUser = async (req, res) => {
       return ApiError(res, 500, "Something Went Wrong While Logging The User");
 
     const options = {
+      // httpOnly: true,
       secure: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+       maxAge: 7 * 24 * 60 * 60 * 1000 
     };
 
     res.cookie("accessToken", accessToken, options);
     res.cookie("refreshToken", refreshToken, options);
-
     return ApiResponse(
       res,
       201,
@@ -100,4 +65,3 @@ export const loginUser = async (req, res) => {
     return ApiError(res, 500, "Internal Server Error", error);
   }
 };
-

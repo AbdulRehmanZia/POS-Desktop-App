@@ -25,7 +25,7 @@ export const registerUser = async (req, res) => {
 
     const createdUser = await prisma.user.findUnique({
       where: { id: newUser.id },
-      select: { id: true, fullname: true, email: true, role: true },
+      select: { id: true, fullname: true, email: true, role: true, plan:true },
     });
 
     if (!createdUser)

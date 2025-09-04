@@ -21,7 +21,6 @@ model Store {
   isDeleted Boolean  @default(false)
 }
 
-// Update User model
 model User {
   id               Int       @id @default(autoincrement())
   email            String    @unique
@@ -39,14 +38,6 @@ model User {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @default(now()) @updatedAt
   isDeleted        Boolean   @default(false)
-}
-model SuperAdmin {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-    role      String   @default("super_admin")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model Category {
@@ -111,7 +102,6 @@ model SaleItem {
 }
 
 enum Role {
-  super_admin
   admin
   cashier
 }

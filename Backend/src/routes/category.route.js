@@ -7,19 +7,22 @@ import {
   getAllCategories,
   updateCategory,
 } from "../controller/category/index.js";
+import { validateStoreAccess } from "../middleware/validateStoreAccess.js";
 const router = Router();
 
-router.get("/", verifyJWT, getAllCategories);
-router.post("/add-category", verifyJWT, authorizeRole("admin"), addCategory);
+router.get("/", verifyJWT, validateStoreAccess, getAllCategories);
+router.post("/add-category", verifyJWT, validateStoreAccess, authorizeRole("admin"), addCategory);
 router.put(
   "/update-category/:id",
   verifyJWT,
+  validateStoreAccess,
   authorizeRole("admin"),
   updateCategory
 );
 router.delete(
   "/delete-category/:id",
   verifyJWT,
+  validateStoreAccess,
   authorizeRole("admin"),
   deleteCategory
 );

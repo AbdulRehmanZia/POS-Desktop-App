@@ -12,19 +12,21 @@ import {
   resetPassword,
   updateUser,
 } from "../controller/user/index.js";
+import { updatePlan } from "../controller/user/updatePlan/index.js";
 
 const router = Router();
 
 //Public
 router.post("/register", registerUser);
 router.post("/login", loginUser);
+router.put("/update-plan/:id", updatePlan)
 
 //Protected
 router.get("/", verifyJWT, getUsers);
 router.post("/logout", verifyJWT, logoutUser);
 router.put("/update/:id", verifyJWT, updateUser);
 router.put("/change-password", verifyJWT, changePassword)
-router.delete("/delete/:id", verifyJWT, deleteUser);
+router.put("/delete/:id", verifyJWT, deleteUser);
 router.post("/refresh-token", verifyJWT, refreshAccessToken);
 router.post("/forget-password", forgetPassword)
 router.post("/reset-password", resetPassword)

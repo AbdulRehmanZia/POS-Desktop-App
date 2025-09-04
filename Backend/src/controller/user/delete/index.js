@@ -2,35 +2,27 @@ import prisma from "../../../db/db.js";
 import ApiError from "../../../utils/ApiError.js";
 import ApiResponse from "../../../utils/ApiResponse.js";
 
-//Delete User
-
+// Delete User (soft delete)
 export const deleteUser = async (req, res) => {
   try {
     const userId = Number(req.params.id);
-    const storeId = req.store.id;
 
-    const member = await prisma.user.findFirst({
-      where: {
-        id: userId,
-        memberOfStores: { some: { id: storeId } },
-        isDeleted: false
-      },
-    });
-
-    if (!member) {
-      return ApiError(res, 404, "User not found in this store");
+    if (isNaN(userId)) {
+      return ApiError(res, 400, "Invalid user ID");
     }
 
-    // soft delete
-    await prisma.user.update({
-      where: { id: userId },
+    const result = await prisma.user.updateMany({
+      where: { id: userId, isDeleted: false },
       data: { isDeleted: true },
     });
 
-    return ApiResponse(res, 200, null, "User Deleted Successfully");
+    if (result.count === 0) {
+      return ApiError(res, 404, "User not found or already deleted");
+    }
+
+    return ApiResponse(res, 200, null, "User deleted successfully");
   } catch (error) {
     console.error("Error in deleteUser:", error);
     return ApiError(res, 500, "Internal Server Error", error);
   }
 };
-

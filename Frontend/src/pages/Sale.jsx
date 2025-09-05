@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import SalesTable from "../components/SaleTable";
 import { ShoppingCart, Download, Calendar } from "lucide-react";
 import axios from "axios"; // Add axios import
+import toast from "react-hot-toast";
 
 export default function Sale() {
   const [refresh, setRefresh] = useState(false);
@@ -50,6 +51,7 @@ export default function Sale() {
       
       // Reset date range display
       setShowDateRange(false);
+      toast.success("CSV Generated Successfully")
     } catch (error) {
       console.error('Export error:', error);
       alert('Failed to export sales report. Please try again.');

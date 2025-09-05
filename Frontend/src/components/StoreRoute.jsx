@@ -35,6 +35,7 @@ const StoreRoute = ({ children }) => {
     );
   }
 
+  // FIXED: Check if user has stores before redirecting to create-store
   if (!hasStores && !isLoadingStores) {
     if (user.role === "cashier") {
       return (
@@ -51,11 +52,10 @@ const StoreRoute = ({ children }) => {
       );
     }
 
-    if (user.role === "admin") {
+    // Only redirect to create-store if user has no stores
+    if (user.role === "admin" && userStores.length === 0) {
       return <Navigate to="/create-store" replace />;
     }
-
-    
   }
 
   // Wait for currentStore to be set automatically by StoreContext

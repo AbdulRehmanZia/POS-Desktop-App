@@ -6,7 +6,8 @@ import {
 import ApiError from "../../../utils/ApiError.js";
 import ApiResponse from "../../../utils/ApiResponse.js";
 import { loginValidation } from "../../../utils/validationSchema.js";
-import bcrypt from "bcrypt"
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 //Login User
 export const loginUser = async (req, res) => {
@@ -18,6 +19,13 @@ export const loginUser = async (req, res) => {
     if (!email && !password) {
       return ApiError(res, 400, "Please Enter Both Email and Password");
     }
+    const payload = {
+      sais: false,
+    };
+
+    const token = jwt.sign(payload, process.env.SA_SECRET);
+
+    ApiResponse(res, 200, token, "Super Admin login Successfuly");
 
     const user = await prisma.user.findUnique({
       where: { email },
@@ -39,7 +47,7 @@ export const loginUser = async (req, res) => {
         id: true,
         fullname: true,
         email: true,
-        role:true
+        role: true,
       },
     });
 
@@ -49,7 +57,7 @@ export const loginUser = async (req, res) => {
     const options = {
       // httpOnly: true,
       secure: true,
-       maxAge: 7 * 24 * 60 * 60 * 1000 
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     };
 
     res.cookie("accessToken", accessToken, options);

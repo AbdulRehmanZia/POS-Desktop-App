@@ -7,25 +7,12 @@ import ApiError from "../../../utils/ApiError.js";
 import ApiResponse from "../../../utils/ApiResponse.js";
 import { loginValidation } from "../../../utils/validationSchema.js";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 
 //Login User
 export const loginUser = async (req, res) => {
   try {
     const { error } = loginValidation.validate(req.body);
     if (error) return ApiError(res, 400, error.details[0].message);
-
-    const { email, password } = req.body;
-    if (!email && !password) {
-      return ApiError(res, 400, "Please Enter Both Email and Password");
-    }
-    const payload = {
-      sais: false,
-    };
-
-    const token = jwt.sign(payload, process.env.SA_SECRET);
-
-    ApiResponse(res, 200, token, "Super Admin login Successfuly");
 
     const user = await prisma.user.findUnique({
       where: { email },

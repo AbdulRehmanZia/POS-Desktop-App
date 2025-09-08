@@ -6,13 +6,18 @@ import {
 import ApiError from "../../../utils/ApiError.js";
 import ApiResponse from "../../../utils/ApiResponse.js";
 import { loginValidation } from "../../../utils/validationSchema.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcrypt"
 
 //Login User
 export const loginUser = async (req, res) => {
   try {
     const { error } = loginValidation.validate(req.body);
     if (error) return ApiError(res, 400, error.details[0].message);
+
+    const { email, password } = req.body;
+    if (!email && !password) {
+      return ApiError(res, 400, "Please Enter Both Email and Password");
+    }
 
     const user = await prisma.user.findUnique({
       where: { email },
@@ -34,7 +39,7 @@ export const loginUser = async (req, res) => {
         id: true,
         fullname: true,
         email: true,
-        role: true,
+        role:true
       },
     });
 
@@ -44,7 +49,7 @@ export const loginUser = async (req, res) => {
     const options = {
       // httpOnly: true,
       secure: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+       maxAge: 7 * 24 * 60 * 60 * 1000 
     };
 
     res.cookie("accessToken", accessToken, options);

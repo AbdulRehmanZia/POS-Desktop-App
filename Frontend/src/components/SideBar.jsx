@@ -9,6 +9,7 @@ import {
   TagIcon,
   ChartBarIcon,
   ChevronDownIcon,
+  
 } from "@heroicons/react/24/outline";
 import { useContext, useState, useRef, useEffect } from "react";
 import { UserContext } from "../context/UserContext";
@@ -43,6 +44,7 @@ export default function SideBar({ children }) {
       roles: ["admin"],
       icon: <ChartBarIcon className="h-5 w-5" />,
     },
+    
     {
       name: "New Sale",
       path: "/dashboard/new-sale",
@@ -263,7 +265,6 @@ export default function SideBar({ children }) {
           </div>
         </div>
 
-        {/* Logout Button (Removed from outside, now inside dropdown) */}
       </div>
 
       {/* Main Content */}

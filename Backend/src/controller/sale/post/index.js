@@ -4,6 +4,8 @@ import ApiResponse from "../../../utils/ApiResponse.js";
 
 export const addSale = async (req, res) => {
   try {
+    const storeId = req.store.id;
+    const userId = req.user.id;
     const { paymentType, items, customerName, customerEmail, customerPhone } = req.body;
 
     // Basic validation
@@ -17,22 +19,17 @@ export const addSale = async (req, res) => {
       }
     }
 
-    const productIds = items.map((item) => item.productId);
+    // Check if store exists
+    const store = await prisma.store.findUnique({ where: { id: storeId } });
+    if (!store) return ApiError(res, 404, null, "Store not found");
+
+    const productIds = items.map((i) => i.productId);
 
     const sale = await prisma.$transaction(async (tx) => {
-      
+      // Fetch all products in one query
       const products = await tx.product.findMany({
-        where: {
-          id: { in: productIds },
-          isDeleted: false,
-          storeId: req.store.id, 
-        },
-        select: {
-          id: true,
-          price: true,
-          stockQuantity: true,
-          name: true,
-        },
+        where: { id: { in: productIds }, isDeleted: false, storeId },
+        select: { id: true, price: true, stockQuantity: true, name: true },
       });
 
       if (products.length !== productIds.length) {
@@ -40,58 +37,47 @@ export const addSale = async (req, res) => {
       }
 
       const productMap = new Map(products.map((p) => [p.id, p]));
-      
-      // Validate stock and calculate total
       let totalAmount = 0;
       const saleItemData = [];
-      
-      const stockUpdates = [];
 
       for (const item of items) {
         const product = productMap.get(item.productId);
-        
         if (product.stockQuantity < item.quantity) {
           throw new Error(`Insufficient stock for ${product.name}`);
         }
 
         totalAmount += product.price * item.quantity;
-        
+
         saleItemData.push({
           productId: item.productId,
           quantity: item.quantity,
           priceAtSale: product.price,
         });
-
-        stockUpdates.push({
-          id: item.productId,
-          newStock: product.stockQuantity - item.quantity,
-        });
       }
 
-      // Optimized bulk stock update - Update all products in a single operation
-      // Method 1: Using updateMany with OR conditions (most efficient for Prisma)
-      await Promise.all(
-  items.map((item) =>
-    tx.product.updateMany({
-      where: {
-        id: item.productId,
-        stockQuantity: { gte: item.quantity }, 
-      },
-      data: { stockQuantity: { decrement: item.quantity } },
-    })
-  )
-);
+      // 🔹 Bulk stock update in one go using Promise.all (still safe)
+      const updates = items.map((item) =>
+        tx.product.updateMany({
+          where: { id: item.productId, stockQuantity: { gte: item.quantity } },
+          data: { stockQuantity: { decrement: item.quantity } },
+        })
+      );
 
+      const results = await Promise.all(updates);
 
-      
-      
-      
+      // Check if any stock update failed
+      results.forEach((r, idx) => {
+        if (r.count === 0) {
+          const product = productMap.get(items[idx].productId);
+          throw new Error(`Stock update failed for ${product.name}`);
+        }
+      });
 
-      // Create Sale
+      // Create the sale and saleItems
       return await tx.sale.create({
         data: {
-          storeId: req.store.id,
-          userId: req.user.id,
+          storeId,
+          userId,
           paymentType,
           totalAmount,
           customerName,
@@ -99,16 +85,22 @@ export const addSale = async (req, res) => {
           customerPhone,
           saleItems: { create: saleItemData },
         },
-        include: {
-          saleItems: { include: { product: true } },
-        },
+        include: { saleItems: { include: { product: true } } },
       });
     });
 
     return ApiResponse(res, 201, sale, "Sale Generated Successfully");
   } catch (error) {
     console.error("Sale creation error:", error);
-    return ApiError(res, 500, error.message || "Internal Server Error");
+
+    if (error.message?.includes("Insufficient stock") || error.message?.includes("Stock update failed")) {
+      return ApiError(res, 409, error.message);
+    }
+
+    if (error.message?.includes("missing or deleted") || error.message?.includes("not found")) {
+      return ApiError(res, 400, error.message);
+    }
+
+    return ApiError(res, 500, "Internal Server Error", error);
   }
 };
-

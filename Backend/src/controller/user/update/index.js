@@ -7,12 +7,10 @@ import bcrypt from "bcrypt";
 export const updateUser = async (req, res) => {
   try {
     const userId = Number(req.params.id);
-    const storeId = req.store.id;
 
     const member = await prisma.user.findFirst({
       where: {
         id: userId,
-        memberOfStores: { some: { id: storeId } },
         isDeleted: false
       },
     });
@@ -22,12 +20,11 @@ export const updateUser = async (req, res) => {
     }
 
 
-    const { fullname, email, password, role } = req.body;
+    const { fullname, email, password } = req.body;
     const updatedData = {};
     if (fullname !== undefined) updatedData.fullname = fullname;
     if (email !== undefined) updatedData.email = email;
     if (password !== undefined) updatedData.password = password;
-    if (plan !== undefined) updatedData.plan = plan;
 
     if (Object.keys(updatedData).length === 0) {
       return ApiError(res, 400, "No valid fields provided for update");

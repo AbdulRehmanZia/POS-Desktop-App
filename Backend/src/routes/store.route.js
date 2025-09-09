@@ -14,7 +14,7 @@ const router = Router();
 router.post("/create", verifyJWT, createStore);
 router.get("/", verifyJWT, getStores);
 router.get("/:id", verifyJWT, getStoreById);
-router.put("/:id", verifyJWT, updateStore);
-router.delete("/:id", verifyJWT, deleteStore);
+router.put("/update/:id", verifyJWT, updateStore);
+router.put("/delete/:id", verifyJWT, deleteStore);
 
 export default router;

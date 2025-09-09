@@ -8,24 +8,28 @@ import {
   getAllProducts,
   updateProduct,
 } from "../controller/product/index.js";
+import { validateStoreAccess } from "../middleware/validateStoreAccess.js";
 
 const router = Router();
 
 router.get(
   "/",
   verifyJWT,
+  validateStoreAccess,
   getAllProducts
 );
-router.post("/add-product", verifyJWT, authorizeRole("admin"), addProduct);
+router.post("/add-product", verifyJWT, validateStoreAccess,authorizeRole("admin"), addProduct);
 router.put(
   "/update-product/:id",
    verifyJWT,
+   validateStoreAccess,
   authorizeRole("admin"),
   updateProduct
 );
 router.delete(
   "/delete-product/:id",
    verifyJWT,
+   validateStoreAccess,
   authorizeRole("admin"),
   deleteProduct
 );

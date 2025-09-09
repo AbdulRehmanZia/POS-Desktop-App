@@ -20,7 +20,7 @@ export default function ProductForm({ onProductAdded, initialData, onClose }) {
         setCategories(res.data.data);
       } catch (error) {
         console.error("Error fetching categories", error);
-        toast.error("Failed to load categories");
+        // toast.error("Failed to load categories");
       }
     };
     fetchCategories();

@@ -21,7 +21,6 @@ model Store {
   isDeleted Boolean  @default(false)
 }
 
-// Update User model
 model User {
   id               Int       @id @default(autoincrement())
   email            String    @unique

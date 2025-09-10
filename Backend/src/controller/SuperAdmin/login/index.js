@@ -5,14 +5,20 @@ import ApiError from "../../../utils/ApiError.js";
 export const SuperAdminLogin =(req , res)=>{
     
     const { email, password } = req.body;
-    if (!email && !password) {
-      return ApiError(res, 400, "Please Enter Both Email and Password");
-    }
-    const payload = {
-      sais: false,
-    };
+     if (!email || !password) {
+    return ApiError(res, 400, "Please Enter Both Email and Password");
+  }
+  if (
+    email !== process.env.SUPER_ADMIN_EMAIL ||
+    password !== process.env.SUPER_ADMIN_PASSWORD
+  ) {
+    return ApiError(res, 400, "Invalid Super Admin credentials");
+  }
+  const payload = {
+    sais: false,
+  };
 
-    const token = jwt.sign(payload, process.env.SA_SECRET);
+  const token = jwt.sign(payload, process.env.SA_SECRET);
 
-    ApiResponse(res, 200, token, "Super Admin login Successfuly");
-}
+  ApiResponse(res, 200, token, "Super Admin login Successfuly");
+};

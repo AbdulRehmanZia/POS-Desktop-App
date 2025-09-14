@@ -22,7 +22,7 @@ export const updateProduct = async (req, res) => {
   where: {
     id: productExist.storeId,
     isDeleted: false,
-    OownerId: req.user.id ,
+    ownerId: req.user.id ,
     
   },
 });

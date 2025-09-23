@@ -104,9 +104,9 @@ export default function SideBar({ children }) {
     };
   }, [clearStoreData]);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
   };
 
   const handleStoreSwitch = (store) => {

@@ -70,20 +70,28 @@ const UserContextProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await api.post("/user/logout");
-    } catch (err) {
-      console.error("Logout API call failed", err);
-      // Continue with logout even if API call fails
-    } finally {
-      // Always clear local state regardless of API call result
-      setUser(null);
-      setAccessToken(null);
-      localStorage.clear();
+      // First clear all auth headers so any subsequent requests won't use old tokens
       delete api.defaults.headers.common['Authorization'];
       delete api.defaults.headers.common['store-id'];
       
+      // Clear all state and storage first
+      setUser(null);
+      setAccessToken(null);
+      localStorage.clear();
+      
       // Trigger store context to clear its data
       window.dispatchEvent(new CustomEvent('user-logout'));
+      
+      // Finally, call the logout API (don't wait for response)
+      api.post("/user/logout").catch(err => {
+        console.error("Logout API call failed", err);
+      });
+    } catch (err) {
+      console.error("Logout failed", err);
+      // In case of any error, ensure we're fully logged out locally
+      setUser(null);
+      setAccessToken(null);
+      localStorage.clear();
     }
   };
 

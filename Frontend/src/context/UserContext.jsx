@@ -15,42 +15,32 @@ const UserContextProvider = ({ children }) => {
 
   const [isLoading, setIsLoading] = useState(true);
 
-  // Auto-login check on app startup
+  // Simple auth state initialization - no API calls needed
   useEffect(() => {
-    const checkAuthStatus = async () => {
+    const initializeAuth = () => {
       const savedToken = localStorage.getItem("accessToken");
       const savedUser = localStorage.getItem("user");
-      
+
       if (savedToken && savedUser) {
-        try {
-          // Verify token is still valid by making a test API call
-          api.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
-          
-          const response = await api.get("/api/v1/sales/"); 
-          
-          if (response.status === 200) {
-            setUser(JSON.parse(savedUser));
-            setAccessToken(savedToken);
-          } else {
-            throw new Error("Token invalid");
-          }
-        } catch (error) {
-          console.log("Token expired or invalid, clearing storage");
-          localStorage.clear();
-          setUser(null);
-          setAccessToken(null);
-        }
+        // Trust the saved data - let axios interceptor handle token validation
+        setUser(JSON.parse(savedUser));
+        setAccessToken(savedToken);
+        api.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
       }
+      
       setIsLoading(false);
     };
 
-    checkAuthStatus();
+    initializeAuth();
   }, []);
 
   // Keep storage in sync
   useEffect(() => {
-    if (user) localStorage.setItem("user", JSON.stringify(user));
-    else localStorage.removeItem("user");
+    if (user) {
+      localStorage.setItem("user", JSON.stringify(user));
+    } else {
+      localStorage.removeItem("user");
+    }
   }, [user]);
 
   useEffect(() => {
@@ -63,9 +53,29 @@ const UserContextProvider = ({ children }) => {
     }
   }, [accessToken]);
 
+  // Listen for logout events from axios interceptor
+  useEffect(() => {
+    const handleInterceptorLogout = () => {
+      setUser(null);
+      setAccessToken(null);
+    };
+
+    // Listen for logout events triggered by axios interceptor
+    window.addEventListener('auth-logout', handleInterceptorLogout);
+    
+    return () => {
+      window.removeEventListener('auth-logout', handleInterceptorLogout);
+    };
+  }, []);
+
   const logout = async () => {
     try {
       await api.post("/user/logout");
+    } catch (err) {
+      console.error("Logout API call failed", err);
+      // Continue with logout even if API call fails
+    } finally {
+      // Always clear local state regardless of API call result
       setUser(null);
       setAccessToken(null);
       localStorage.clear();
@@ -74,8 +84,6 @@ const UserContextProvider = ({ children }) => {
       
       // Trigger store context to clear its data
       window.dispatchEvent(new CustomEvent('user-logout'));
-    } catch (err) {
-      console.error("Logout failed", err);
     }
   };
 
@@ -101,13 +109,13 @@ const UserContextProvider = ({ children }) => {
   }
 
   return (
-    <UserContext.Provider value={{ 
-      user, 
-      setUser, 
-      accessToken, 
-      setAccessToken, 
-      logout, 
-      refreshToken 
+    <UserContext.Provider value={{
+      user,
+      setUser,
+      accessToken,
+      setAccessToken,
+      logout,
+      refreshToken
     }}>
       {children}
     </UserContext.Provider>

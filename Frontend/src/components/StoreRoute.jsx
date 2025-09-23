@@ -24,7 +24,8 @@ const StoreRoute = ({ children }) => {
     }
   }, [userStores.length, fetchUserStores, hasAttemptedFetch]);
 
-  if (isLoadingStores || (userStores.length === 0 && hasAttemptedFetch)) {
+  // If we have a currentStore from localStorage, don't show loading
+  if (isLoadingStores && !currentStore) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#1C3333]">
         <div className="text-white flex items-center gap-3">
@@ -35,8 +36,8 @@ const StoreRoute = ({ children }) => {
     );
   }
 
-  // FIXED: Check if user has stores before redirecting to create-store
-  if (!hasStores && !isLoadingStores) {
+  // Only proceed with redirection checks after initial fetch is complete
+  if (!isLoadingStores && hasAttemptedFetch && !hasStores) {
     if (user.role === "cashier") {
       return (
         <div className="min-h-screen flex items-center justify-center bg-[#1C3333]">

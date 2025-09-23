@@ -22,24 +22,24 @@ export const forgetPassword = async (req, res) => {
       data: { resetToken: otp, resetTokenExpiry: expiry },
     });
 
-    // await sendEmail({
-    //   to: email,
-    //   subject: "Your Password Reset OTP",
-    //   message: generateEmailTemplate({
-    //     message: `
-    //   <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-    //     <h2 style="color: #2BAE66FF;">Password Reset Request</h2>
-    //     <p>Hello,</p>
-    //     <p>You have requested to reset your password. Use the following One-Time Password (OTP) to proceed:</p>
-    //     <p style="font-size: 24px; font-weight: bold; color: #2BAE66FF;">${otp}</p>
-    //     <p>This OTP is valid for <strong>10 minutes</strong>. Please do not share it with anyone.</p>
-    //     <p>If you didn't request this, you can safely ignore this email.</p>
-    //     <br />
-    //     <p>Regards,<br />Your App Team</p>
-    //   </div>
-    // `,
-    //   }),
-    // });
+    await sendEmail({
+      to: email,
+      subject: "Your Password Reset OTP",
+      message: generateEmailTemplate({
+        message: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <h2 style="color: #2BAE66FF;">Password Reset Request</h2>
+        <p>Hello,</p>
+        <p>You have requested to reset your password. Use the following One-Time Password (OTP) to proceed:</p>
+        <p style="font-size: 24px; font-weight: bold; color: #2BAE66FF;">${otp}</p>
+        <p>This OTP is valid for <strong>10 minutes</strong>. Please do not share it with anyone.</p>
+        <p>If you didn't request this, you can safely ignore this email.</p>
+        <br />
+        <p>Regards,<br />Your App Team</p>
+      </div>
+    `,
+      }),
+    });
     console.log("Generated OTP:", otp);
     return ApiResponse(res, 200, null, "OTP Sent Successfully");
   } catch (error) {
